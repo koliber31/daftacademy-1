@@ -66,15 +66,28 @@ def authentication(password: Optional[str] = None, password_hash: Optional[str] 
         raise HTTPException(status_code=401)
 
 
-@app.post('/register', status_code=201)#, response_model=PatientOut)
-def register_view(patient: PatientIn):
+# @app.post('/register', status_code=201)
+# def register_view(patient: PatientIn):
+#     app.counter += 1
+#     today = date.today()
+#     register_date = str(today)
+#     days = len(set(patient.name + patient.surname))
+#     vaccination_date = str(today + timedelta(days=days))
+#     return PatientOut(id=app.counter,
+#                       name=patient.name,
+#                       surname=patient.surname,
+#                       register_date=register_date,
+#                       vaccination_date=vaccination_date)
+
+@app.post("/register", status_code=201)
+def register_view(name, surname):
     app.counter += 1
     today = date.today()
     register_date = str(today)
-    days = len(set(patient.name + patient.surname))
+    days = len(set(name + surname))
     vaccination_date = str(today + timedelta(days=days))
     return PatientOut(id=app.counter,
-                      name=patient.name,
-                      surname=patient.surname,
+                      name=name,
+                      surname=surname,
                       register_date=register_date,
                       vaccination_date=vaccination_date)

@@ -74,9 +74,10 @@ def test_auth_sha512_no_password():
 
 
 def test_register_view():
-    json = {"name": "Lukasz",
-         "surname": "Szymanski"}
-    response = client.post("/register", json=json)
+    # json = {"name": "Lukasz",
+    #      "surname": "Szymanski"}
+    # response = client.post("/register", json=json)
+    response = client.post("/register?name=Lukasz&surname=Szymanski")
     assert response.status_code == 201
     assert response.json() == {
         'id': 1,
