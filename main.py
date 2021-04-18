@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from hashlib import sha512
+from typing import Optional
 
 app = FastAPI()
 
@@ -36,3 +38,13 @@ def method_id():
 @app.options("/method")
 def method_id():
     return {"method": 'OPTIONS'}
+
+
+@app.get('/auth', status_code=201)
+def authentication(password: Optional[str] = None, password_hash: Optional[str] = None):
+    if not password or not password_hash:
+        raise HTTPException(status_code=401)
+    password = password.encode()
+    if sha512(password).hexdigest() != password_hash:
+        raise HTTPException(status_code=401)
+
