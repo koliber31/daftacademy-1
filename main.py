@@ -40,7 +40,7 @@ def method_id():
     return {"method": 'OPTIONS'}
 
 
-@app.get('/auth', status_code=201)
+@app.get('/auth', status_code=204)
 def authentication(password: Optional[str] = None, password_hash: Optional[str] = None):
     if not password or not password_hash:
         raise HTTPException(status_code=401)
