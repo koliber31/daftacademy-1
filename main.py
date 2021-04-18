@@ -2,6 +2,21 @@ from fastapi import FastAPI, HTTPException
 from hashlib import sha512
 from typing import Optional
 from datetime import date, timedelta
+from pydantic import BaseModel
+
+
+class PatientIn(BaseModel):
+    name: str
+    surname: str
+
+
+class PatientOut(BaseModel):
+    id: int
+    name: str
+    surname: str
+    register_date: str
+    vaccination_date: str
+
 
 app = FastAPI()
 app.counter = 0
@@ -51,12 +66,25 @@ def authentication(password: Optional[str] = None, password_hash: Optional[str] 
         raise HTTPException(status_code=401)
 
 
-@app.post('/register', status_code=201)
-def register_view(name: str, surname: str):
+# @app.post('/register', status_code=201)
+# def register_view(name: str, surname: str):
+#     app.counter += 1
+#     today = date.today()
+#     register_date = str(today)
+#     days = len(set(name + surname))
+#     vaccination_date = str(today + timedelta(days=days))
+#     return {'id': str(app.counter), 'name': name, 'surname': surname, 'register_date': register_date,
+#             'vaccination_date': vaccination_date}
+
+@app.post('/register', status_code=201, response_model=PatientOut)
+def register_view(patient: PatientIn):
     app.counter += 1
     today = date.today()
     register_date = str(today)
-    days = len(name) + len(surname)
+    days = len(set(patient.name + patient.surname))
     vaccination_date = str(today + timedelta(days=days))
-    return {'id': app.counter, 'name': name, 'surname': surname, 'register_date': register_date,
-            'vaccination_date': vaccination_date}
+    return PatientOut(id=app.counter,
+                      name=patient.name,
+                      surname=patient.surname,
+                      register_date=register_date,
+                      vaccination_date=vaccination_date)
