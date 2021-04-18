@@ -53,7 +53,6 @@ def test_auth_sha512_ok():
     response = client.get("/auth?password=haslo&password_hash=013c6889f799cd986a735118e1888727d1435f7f623d05d58c61" +
                           "bf2cd8b49ac90105e5786ceaabd62bbc27336153d0d316b2d13b36804080c44aa6198c533215")
     assert response.status_code == 204
-    # assert response.json() == {'result': 'True'}
 
 
 def test_auth_sha512_nok():
@@ -72,3 +71,15 @@ def test_auth_sha512_no_password():
     response = client.get("/auth?password_hash=013c6889f799cd986a735118e1888727d1435f7f623d05d58c61bf2cd8b49ac90105" +
                           "e5786ceaabd62bbc27336153d0d316b2d13b36804080c44aa6198c533215")
     assert response.status_code == 401
+
+
+def test_register_view():
+    response = client.post("/register?name=Lukasz&surname=Szymanski")
+    assert response.status_code == 201
+    assert response.json() == {
+        'id': 1,
+        'name': 'Lukasz',
+        'surname': 'Szymanski',
+        'register_date': '2021-04-18',
+        'vaccination_date': '2021-05-03'
+    }

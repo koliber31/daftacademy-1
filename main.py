@@ -1,8 +1,10 @@
 from fastapi import FastAPI, HTTPException
 from hashlib import sha512
 from typing import Optional
+from datetime import date, timedelta
 
 app = FastAPI()
+app.counter = 0
 
 
 @app.get("/")
@@ -48,3 +50,13 @@ def authentication(password: Optional[str] = None, password_hash: Optional[str] 
     if sha512(password).hexdigest() != password_hash:
         raise HTTPException(status_code=401)
 
+
+@app.post('/register', status_code=201)
+def register_view(name: str, surname: str):
+    app.counter += 1
+    today = date.today()
+    register_date = str(today)
+    days = len(name) + len(surname)
+    vaccination_date = str(today + timedelta(days=days))
+    return {'id': app.counter, 'name': name, 'surname': surname, 'register_date': register_date,
+            'vaccination_date': vaccination_date}
