@@ -83,5 +83,5 @@ def test_register_view():
         'name': 'Lukasz',
         'surname': 'Szymanski',
         'register_date': '2021-04-19',
-        'vaccination_date': '2021-04-30'
+        'vaccination_date': '2021-05-04'
     }
