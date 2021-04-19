@@ -74,15 +74,14 @@ def test_auth_sha512_no_password():
 
 
 def test_register_view():
-    # json = {"name": "Lukasz",
-    #      "surname": "Szymanski"}
-    # response = client.post("/register", json=json)
-    response = client.post("/register?name=Lukasz&surname=Szymanski")
+    json = {"name": "Lukasz",
+            "surname": "Szymanski"}
+    response = client.post("/register", json=json)
     assert response.status_code == 201
     assert response.json() == {
         'id': 1,
         'name': 'Lukasz',
         'surname': 'Szymanski',
-        'register_date': '2021-04-18',
-        'vaccination_date': '2021-04-29'
+        'register_date': '2021-04-19',
+        'vaccination_date': '2021-04-30'
     }
