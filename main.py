@@ -71,7 +71,7 @@ def register_view(patient: PatientIn):
     app.counter += 1
     today = date.today()
     register_date = str(today)
-    days = len([i for i in patient.name + patient.surname if i.isalnum()])
+    days = len([i for i in patient.name + patient.surname if i.isalpha()])
     vaccination_date = str(today + timedelta(days=days))
     return PatientOut(id=app.counter,
                       name=patient.name,
