@@ -23,6 +23,12 @@ def test_login_session_nok():
 
 
 def test_login_token_ok():
-    response = client.post('/login_session?user=4dm1n&password=NotSoSecurePa$$')
+    response = client.post('/login_token?user=4dm1n&password=NotSoSecurePa$$')
     assert response.status_code == 200
     assert response.json() == {"token": 'c8730304beb5f0e94434af0869469a86069a2aa7a824e95b7e8cee9ba14bbac6'}
+
+
+def test_foo():
+    response = client.post('/foo')
+    assert response.status_code == 200
+    assert response.json() == {'foo': 'bar'}
