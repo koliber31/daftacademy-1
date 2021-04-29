@@ -44,7 +44,3 @@ def login_token(user: str, password: str):
     app.store['login_token'] = session_token
     return response
 
-
-@app.post('/foo')
-def foo():
-    return {'foo': 'bar'}
