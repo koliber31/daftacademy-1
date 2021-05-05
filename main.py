@@ -1,5 +1,7 @@
 import sqlite3
+
 from fastapi import FastAPI, HTTPException
+from typing import Optional
 
 app = FastAPI()
 
@@ -52,8 +54,23 @@ async def customers():
 async def products(product_id: int):
     app.db_connection.row_factory = sqlite3.Row
     data = app.db_connection.execute(
-        "SELECT ProductId AS id, ProductName AS name FROM products WHERE ProductId= ?", (product_id, )).fetchone()
+        "SELECT ProductId AS id, ProductName AS name FROM products WHERE ProductId= ?", (product_id,)).fetchone()
     if data:
         return data
     else:
         raise HTTPException(status_code=404, detail='Incorrect id value')
+
+
+@app.get("/employees/")
+async def products(limit: Optional[int] = None, offset: Optional[int] = None, order='id'):
+    app.db_connection.row_factory = sqlite3.Row
+    if order not in ['id', 'first_name', 'last_name', 'city']:
+        raise HTTPException(status_code=400, detail='Wrong order parameter')
+    limitation = ' '
+    if limit or limit == 0:
+        limitation += f'LIMIT {limit}'
+        if offset or offset == 0:
+            limitation += f' OFFSET {offset}'
+    data = app.db_connection.execute(
+        f"SELECT EmployeeId AS id, LastName AS last_name, FirstName AS first_name, City AS city FROM employees ORDER BY {order}" + limitation).fetchall()
+    return {'employees': data}
