@@ -15,11 +15,34 @@ async def shutdown():
     app.db_connection.close()
 
 
-@app.get("/products")
-async def products():
-    cursor = app.db_connection.cursor()
-    app.db_connection.row_factory = lambda cursor, x: x[0]
-    products_list = cursor.execute("SELECT ProductName FROM Products").fetchall()
+@app.get("/categories")
+async def categories():
+    app.db_connection.row_factory = sqlite3.Row
+    data = app.db_connection.execute(
+        "SELECT CategoryId AS id, CategoryName AS name FROM Categories").fetchall()
     return {
-        "products": products_list,
+        'categories': data
+    }
+
+
+@app.get("/customers")
+async def customers():
+    app.db_connection.row_factory = sqlite3.Row
+    data = app.db_connection.execute(
+        "SELECT CustomerId, CompanyName, Address, PostalCode, City, Country FROM customers").fetchall()
+    refactored = []
+    for row in data:
+        keys = ['Address', 'PostalCode', 'City', 'Country']
+        full_address = []
+        for key in keys:
+            if row[key]:
+                full_address.append(row[key])
+
+        refactored.append(
+            {'id': row['CustomerId'],
+             'name': row['CompanyName'],
+             'full_address': ' '.join(full_address)}
+        )
+    return {
+        'customers': refactored
     }
