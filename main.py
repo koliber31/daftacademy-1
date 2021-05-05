@@ -48,7 +48,7 @@ async def customers():
     }
 
 
-@app.get("/product/{product_id}")
+@app.get("/products/{product_id}")
 async def products(product_id: int):
     app.db_connection.row_factory = sqlite3.Row
     data = app.db_connection.execute(
