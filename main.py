@@ -1,5 +1,5 @@
 import sqlite3
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 app = FastAPI()
 
@@ -46,3 +46,14 @@ async def customers():
     return {
         'customers': refactored
     }
+
+
+@app.get("/product/{product_id}")
+async def products(product_id: int):
+    app.db_connection.row_factory = sqlite3.Row
+    data = app.db_connection.execute(
+        "SELECT ProductId AS id, ProductName AS name FROM products WHERE ProductId= ?", (product_id, )).fetchone()
+    if data:
+        return data
+    else:
+        raise HTTPException(status_code=404, detail='Incorrect id value')
