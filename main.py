@@ -61,6 +61,22 @@ async def products(product_id: int):
         raise HTTPException(status_code=404, detail='Incorrect id value')
 
 
+@app.get("/products/{product_id}/orders")
+async def products(product_id: int):
+    app.db_connection.row_factory = sqlite3.Row
+    data = app.db_connection.execute("""
+        SELECT o.OrderId AS id, c.CompanyName AS customer, od.Quantity AS quantity,
+        ROUND((od.UnitPrice * od.Quantity) - (od.Discount * (od.UnitPrice * od.Quantity)), 2) AS total_price
+        FROM Orders AS o JOIN Customers AS c USING (CustomerID)
+        JOIN 'Order Details' AS od USING (OrderId)
+        WHERE od.ProductId= ?""", (product_id,)).fetchall()
+
+    if data:
+        return {'orders': data}
+    else:
+        raise HTTPException(status_code=404, detail=f"Order_id {product_id} doesn't exist")
+
+
 @app.get("/employees/")
 async def employees(limit: Optional[int] = None, offset: Optional[int] = None, order='id'):
     app.db_connection.row_factory = sqlite3.Row
@@ -82,8 +98,8 @@ def products_extended():
     data = app.db_connection.execute('''
                                      SELECT products.ProductID AS id, products.ProductName AS name,
                                      categories.CategoryName AS category, suppliers.CompanyName AS supplier
-                                     FROM products JOIN categories ON products.CategoryId = categories.CategoryId
-                                     JOIN suppliers ON products.SupplierId = suppliers.SupplierId
+                                     FROM products JOIN categories USING (CategoryId)
+                                     JOIN suppliers USING(SupplierId)
                                      ''').fetchall()
 
     return {'products_extended': data}
