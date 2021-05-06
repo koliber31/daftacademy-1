@@ -1,7 +1,13 @@
 import sqlite3
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from typing import Optional
+from pydantic import BaseModel
+
+
+class Category(BaseModel):
+    name: str
+
 
 app = FastAPI()
 
@@ -25,6 +31,48 @@ async def categories():
     return {
         'categories': data
     }
+
+
+@app.post("/categories", status_code=201)
+async def categories(category: Category):
+    cursor = app.db_connection.execute(
+        "INSERT INTO Categories (CategoryName) VALUES (?)", (category.name,)
+    )
+    app.db_connection.commit()
+    new_id = cursor.lastrowid
+    app.db_connection.row_factory = sqlite3.Row
+    category = app.db_connection.execute(
+        "SELECT CategoryId AS id, CategoryName AS name FROM categories WHERE CategoryId = ?", (new_id,)).fetchone()
+    return category
+
+
+@app.api_route(path="/categories/{id}", methods=['PUT', 'DELETE'], status_code=200)
+async def categories(request: Request, category_id: int, category: Optional[Category] = None):
+    app.db_connection.row_factory = sqlite3.Row
+    id_exist = app.db_connection.execute(
+        "SELECT 1 FROM Categories WHERE CategoryId = ?", (category_id,)
+    ).fetchone()
+    if not id_exist:
+        raise HTTPException(status_code=404, detail=f"Category id {category_id} doesn't exist")
+
+    request_method = request.method
+
+    if request_method == 'PUT':
+        cursor = app.db_connection.execute(
+            "UPDATE Categories SET CategoryName = ? WHERE CategoryId = ?", (category.name, category_id)
+        )
+        app.db_connection.commit()
+        category = app.db_connection.execute(
+            "SELECT CategoryId AS id, CategoryName AS name FROM categories WHERE CategoryId = ?",
+            (category_id,)).fetchone()
+        return category
+
+    elif request_method == 'DELETE':
+        cursor = app.db_connection.execute(
+            "DELETE FROM Categories WHERE CategoryId = ?", (category_id,)
+        )
+        app.db_connection.commit()
+        return {'deleted': 1}
 
 
 @app.get("/customers")
