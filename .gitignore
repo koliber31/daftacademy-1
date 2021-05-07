@@ -3,3 +3,4 @@ tests.py
 venv/
 __pycache__
 temp*
+northwind.db
