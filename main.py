@@ -21,6 +21,18 @@ def check_category_id(category_id):
         raise HTTPException(status_code=404, detail=f"Category id {category_id} doesn't exist")
 
 
+def new_remove(text):
+    new = ''
+    for word in text.split(' '):
+        if word.lower() == 'new':
+            continue
+        elif word.lower().startswith('new'):
+            new += word[3:] + ' '
+        else:
+            new += word + ' '
+    return new.strip()
+
+
 @app.on_event("startup")
 async def startup():
     app.db_connection = sqlite3.connect("northwind.db", check_same_thread=False)
@@ -58,8 +70,7 @@ async def category_add(category: Category):
 @app.put("/categories/{category_id}")
 async def category_update(category: Category, category_id: int):
     check_category_id(category_id)
-    if category.name.startswith('new '):
-        category.name = category.name[4:]
+    category.name = new_remove(category.name)
     cursor = app.db_connection.execute(
         "UPDATE Categories SET CategoryName = ? WHERE CategoryId = ?", (category.name, category_id)
     )
