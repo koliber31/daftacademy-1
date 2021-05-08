@@ -49,6 +49,7 @@ async def categories_list():
 
 @app.post("/categories", status_code=201)
 async def category_add(category: Category):
+    # category.name = new_remove(category.name)
     cursor = app.db_connection.execute(
         "INSERT INTO Categories (CategoryName) VALUES (?)", (category.name,)
     )
@@ -63,7 +64,7 @@ async def category_add(category: Category):
 @app.put("/categories/{category_id}")
 async def category_update(category: Category, category_id: int):
     check_category_id(category_id)
-    category.name = new_remove(category.name)
+    # category.name = new_remove(category.name)
     cursor = app.db_connection.execute(
         "UPDATE Categories SET CategoryName = ? WHERE CategoryId = ?", (category.name, category_id)
     )
