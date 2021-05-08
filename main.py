@@ -26,8 +26,8 @@ def new_remove(text):
     for word in text.split(' '):
         if word.lower() == 'new':
             continue
-        elif word.lower().startswith('new'):
-            new += word[3:] + ' '
+        # elif word.lower().startswith('new'):
+        #     new += word[3:] + ' '
         else:
             new += word + ' '
     return new.strip()

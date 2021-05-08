@@ -16,18 +16,18 @@ def test_customers():
 
 def test_category_add():
     with TestClient(app) as client:
-        json = {"name": "new test category"}
+        json = {"name": "test category"}
         response = client.post("/categories", json=json)
         assert response.status_code == 201
-        assert response.json() == {"id": 26, "name": "new test category"}
+        assert response.json() == {"id": 30, "name": "test category"}
 
 
 def test_category_put():
     with TestClient(app) as client:
-        json = {"name": 'changed'}
-        response = client.put("/categories/26", json=json)
+        json = {"name": 'new changed'}
+        response = client.put("/categories/30", json=json)
         assert response.status_code == 200
-        assert response.json() == {"id": 26, "name": "changed"}
+        assert response.json() == {"id": 30, "name": "nchanged"}
 
 
 def test_category_put_wrong_id():
@@ -39,6 +39,6 @@ def test_category_put_wrong_id():
 
 def test_category_delete():
     with TestClient(app) as client:
-        response = client.delete("/categories/26")
+        response = client.delete("/categories/30")
         assert response.status_code == 200
         assert response.json() == {"deleted": 1}
