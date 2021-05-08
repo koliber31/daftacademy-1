@@ -55,7 +55,7 @@ async def category_add(category: Category):
     return category
 
 
-@app.put("/categories/{id}")
+@app.put("/categories/{category_id}", status_code=200)
 async def category_update(category: Category, category_id: int):
     check_category_id(category_id)
     cursor = app.db_connection.execute(
@@ -68,14 +68,14 @@ async def category_update(category: Category, category_id: int):
     return category
 
 
-@app.delete("/categories/{id}")
+@app.delete("/categories/{category_id}")
 async def category_delete(category_id: int):
     check_category_id(category_id)
     cursor = app.db_connection.execute(
         "DELETE FROM Categories WHERE CategoryId = ?", (category_id,)
     )
     app.db_connection.commit()
-    return {"deleted": 1}
+    return {"deleted": cursor.rowcount}
 
 
 @app.get("/customers")
