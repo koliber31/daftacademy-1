@@ -33,6 +33,7 @@ def new_remove(text):
     return new.strip()
 
 
+
 @app.on_event("startup")
 async def startup():
     app.db_connection = sqlite3.connect("northwind.db", check_same_thread=False)
