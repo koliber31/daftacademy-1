@@ -22,16 +22,8 @@ def check_category_id(category_id):
 
 
 def new_remove(text):
-    new = ''
-    for word in text.split(' '):
-        if word.lower() == 'new':
-            continue
-        # elif word.lower().startswith('new'):
-        #     new += word[3:] + ' '
-        else:
-            new += word + ' '
-    return new.strip()
-
+    new = [word for word in text.split(' ') if word.lower() != 'new']
+    return ' '.join(new)
 
 
 @app.on_event("startup")

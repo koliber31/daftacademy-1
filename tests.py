@@ -27,7 +27,7 @@ def test_category_put():
         json = {"name": 'new changed'}
         response = client.put("/categories/30", json=json)
         assert response.status_code == 200
-        assert response.json() == {"id": 30, "name": "nchanged"}
+        assert response.json() == {"id": 30, "name": "changed"}
 
 
 def test_category_put_wrong_id():
