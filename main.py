@@ -1,20 +1,24 @@
 import sqlite3
 
-from fastapi import FastAPI, HTTPException, Request
-from typing import Optional
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from typing import Optional
 
 
 class Category(BaseModel):
     name: str
 
 
-class CategoryOut(BaseModel):
-    id: int
-    name: str
-
-
 app = FastAPI()
+
+
+def check_category_id(category_id):
+    app.db_connection.row_factory = sqlite3.Row
+    id_exist = app.db_connection.execute(
+        "SELECT 1 FROM Categories WHERE CategoryId = ?", (category_id,)
+    ).fetchone()
+    if not id_exist:
+        raise HTTPException(status_code=404, detail=f"Category id {category_id} doesn't exist")
 
 
 @app.on_event("startup")
@@ -29,7 +33,7 @@ async def shutdown():
 
 
 @app.get("/categories")
-async def categories():
+async def categories_list():
     app.db_connection.row_factory = sqlite3.Row
     data = app.db_connection.execute(
         "SELECT CategoryId AS id, CategoryName AS name FROM Categories").fetchall()
@@ -39,7 +43,7 @@ async def categories():
 
 
 @app.post("/categories", status_code=201)
-async def categories(category: Category):
+async def category_add(category: Category):
     cursor = app.db_connection.execute(
         "INSERT INTO Categories (CategoryName) VALUES (?)", (category.name,)
     )
@@ -52,22 +56,26 @@ async def categories(category: Category):
 
 
 @app.put("/categories/{id}")
-async def categories(category: Category, category_id: int):
-    app.db_connection.row_factory = sqlite3.Row
-    id_exist = app.db_connection.execute(
-        "SELECT 1 FROM Categories WHERE CategoryId = ?", (category_id,)
-    ).fetchone()
-    if not id_exist:
-        raise HTTPException(status_code=404, detail=f"Category id {category_id} doesn't exist")
+async def category_update(category: Category, category_id: int):
+    check_category_id(category_id)
     cursor = app.db_connection.execute(
         "UPDATE Categories SET CategoryName = ? WHERE CategoryId = ?", (category.name, category_id)
     )
-
     app.db_connection.commit()
     category = app.db_connection.execute(
         "SELECT CategoryId AS id, CategoryName AS name FROM categories WHERE CategoryId = ?",
         (category_id,)).fetchone()
     return category
+
+
+@app.delete("/categories/{id}")
+async def category_delete(category_id: int):
+    check_category_id(category_id)
+    cursor = app.db_connection.execute(
+        "DELETE FROM Categories WHERE CategoryId = ?", (category_id,)
+    )
+    app.db_connection.commit()
+    return {"deleted": 1}
 
 
 @app.get("/customers")
