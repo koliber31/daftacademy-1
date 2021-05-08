@@ -55,9 +55,11 @@ async def category_add(category: Category):
     return category
 
 
-@app.put("/categories/{category_id}", status_code=200)
+@app.put("/categories/{category_id}")
 async def category_update(category: Category, category_id: int):
     check_category_id(category_id)
+    if category.name.startswith('new '):
+        category.name = category.name[4:]
     cursor = app.db_connection.execute(
         "UPDATE Categories SET CategoryName = ? WHERE CategoryId = ?", (category.name, category_id)
     )
