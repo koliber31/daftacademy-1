@@ -1,35 +1,14 @@
-import sqlite3
-
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 from typing import Optional
-
-
-class Category(BaseModel):
-    name: str
-
+import sqlite3
+from fastapi import FastAPI, Request, Response, status, HTTPException
 
 app = FastAPI()
 
 
-def check_category_id(category_id):
-    app.db_connection.row_factory = sqlite3.Row
-    id_exist = app.db_connection.execute(
-        "SELECT 1 FROM Categories WHERE CategoryId = ?", (category_id,)
-    ).fetchone()
-    if not id_exist:
-        raise HTTPException(status_code=404, detail=f"Category id {category_id} doesn't exist")
-
-
-def new_remove(text):
-    new = [word for word in text.split(' ') if word.lower() != 'new']
-    return ' '.join(new)
-
-
 @app.on_event("startup")
 async def startup():
-    app.db_connection = sqlite3.connect("northwind.db", check_same_thread=False)
-    app.db_connection.text_factory = lambda b: b.decode(errors="ignore")  # northwind specific
+    app.db_connection = sqlite3.connect("northwind.db")
+    app.db_connection.text_factory = lambda b: b.decode(errors="ignore")  # northwind specific 
 
 
 @app.on_event("shutdown")
@@ -37,115 +16,154 @@ async def shutdown():
     app.db_connection.close()
 
 
-@app.get("/categories")
-async def categories_list():
+@app.get('/categories')
+async def func(response: Response):
+    #app.db_connection.row_factory = sqlite3.Row
+
+    categories = app.db_connection.execute("SELECT CategoryName, CategoryID FROM Categories ORDER BY CategoryID").fetchall()
+    response.status_code = status.HTTP_200_OK
+    return {"categories":[
+         {'id': x[1] , 'name': f"{x[0]}"} for x in categories
+    ]}
+
+@app.get('/customers')
+async def func(response: Response):
+    customers = app.db_connection.execute("SELECT CompanyName, CustomerID, Address, PostalCode, City, Country FROM Customers ORDER BY CAST(CustomerID as INTEGER)").fetchall()
+    response.status_code = status.HTTP_200_OK
+    # return {"customers":[
+    #      {'id': x[1] , 'name': f'{x[0]}' , 'full_address': f'{x[2]}'} for x in customers
+    # ]}
+    # result = {
+    #     'customers': []
+    # }
+    # for c in customers:
+    #     _id = str(c[1])
+    #     name = str(c[0])
+    #     Address = c[2] + ' ' if c[2] else ''
+    #     PostalCode = c[3] + ' 'if c[3] else ''
+    #     City = c[4] + ' ' if c[4] else ''
+    #     Country= c[5] if c[5] else ''
+    #     full_address = '{Address}{PostalCode}{City}{Country}'.format(Address=Address,PostalCode=PostalCode,City=City,Country=Country)
+        
+    #     result['customers'].append(
+    #         {'id': _id, 'name': name, 'full_address': full_address}
+    #     )
+    # return result
+
+    # print(f'{type([1][2])}')
+    # print(f'{customers}')
+    # return {"customers":[
+    #     {'id': f'{x[1]}', 'name': f'{x[0]}', 'full_address': f'{x[2]}'} for x in customers
+    # ]}
+    number = 0
+    for x in customers:
+        if x[2] is None:
+            print(x)
+            x = list(x)
+            x[2] = ''
+            x = tuple(x)
+            print(x)
+        if x[3] is None:
+            x = list(x)
+            x[3] = ''
+            x = tuple(x)
+        if x[4] is None:
+            x = list(x)
+            x[4] = ''
+            x = tuple(x)
+        if x[5] is None:
+            x = list(x)
+            x[5] = ''
+            x = tuple(x)
+        customers[number] = x
+        number += 1
+    return {"customers":[
+         {'id': f'{x[1]}' , 'name': f'{x[0]}' , 'full_address': f'{x[2]} {x[3]} {x[4]} {x[5]}'} for x in customers
+    ]}
+
+@app.get('/products/{id_}')
+async def func(id_: int, response: Response):
+    response.status_code = status.HTTP_200_OK
+    number = []
+    ids = app.db_connection.execute(f"SELECT ProductID FROM Products").fetchall()
+    data = app.db_connection.execute(f"SELECT ProductID, ProductName FROM Products WHERE ProductID = {id_}").fetchone()
+    for i in range(len(ids)):
+        number.append(ids[i][0])
+    if id_ not in number:
+        raise HTTPException(status_code=404)
+    return {'id': data[0], 'name': data[1]}
+
+@app.get('/employees')
+async def func(response: Response, limit: Optional[int] = None, offset: Optional[int] = None, order: Optional[str] = None):
     app.db_connection.row_factory = sqlite3.Row
-    data = app.db_connection.execute(
-        "SELECT CategoryId AS id, CategoryName AS name FROM Categories").fetchall()
-    return {
-        'categories': data
-    }
+    if order not in ['first_name', 'last_name', 'city', None]:
+        raise HTTPException(status_code=400)
+    if limit is None:
+        if offset is None:
+            if order is None:
+                data = app.db_connection.execute(f"SELECT EmployeeID, LastName, FirstName, City FROM Employees ORDER BY EmployeeID").fetchall()
+            if order == 'first_name':
+                data = app.db_connection.execute(f"SELECT EmployeeID, LastName, FirstName, City FROM Employees ORDER BY FirstName").fetchall()
+            if order == 'last_name':
+                data = app.db_connection.execute(f"SELECT EmployeeID, LastName, FirstName, City FROM Employees ORDER BY LastName").fetchall() 
+            if order == 'city':
+                data = app.db_connection.execute(f"SELECT EmployeeID, LastName, FirstName, City FROM Employees ORDER BY City").fetchall()   
+        if offset != None:
+            if order is None:
+                data = app.db_connection.execute(f"SELECT EmployeeID, LastName, FirstName, City FROM Employees ORDER BY EmployeeID LIMIT {-1} OFFSET {offset}").fetchall()
+            if order == 'first_name':
+                data = app.db_connection.execute(f"SELECT EmployeeID, LastName, FirstName, City FROM Employees ORDER BY FirstName LIMIT {-1} OFFSET {offset}").fetchall()
+            if order == 'last_name':
+                data = app.db_connection.execute(f"SELECT EmployeeID, LastName, FirstName, City FROM Employees ORDER BY LastName LIMIT {-1} OFFSET {offset}").fetchall() 
+            if order == 'city':
+                data = app.db_connection.execute(f"SELECT EmployeeID, LastName, FirstName, City FROM Employees ORDER BY City LIMIT {-1} OFFSET {offset}").fetchall()
+    if limit != None:
+        if offset is None:
+            if order is None:
+                data = app.db_connection.execute(f"SELECT EmployeeID, LastName, FirstName, City FROM Employees ORDER BY EmployeeID LIMIT {limit}").fetchall()
+            if order == 'first_name':
+                data = app.db_connection.execute(f"SELECT EmployeeID, LastName, FirstName, City FROM Employees ORDER BY FirstName LIMIT {limit}").fetchall()
+            if order == 'last_name':
+                data = app.db_connection.execute(f"SELECT EmployeeID, LastName, FirstName, City FROM Employees ORDER BY LastName LIMIT {limit}").fetchall() 
+            if order == 'city':
+                data = app.db_connection.execute(f"SELECT EmployeeID, LastName, FirstName, City FROM Employees ORDER BY City LIMIT {limit}").fetchall()            
+        if offset != None:
+            if order is None:
+                data = app.db_connection.execute(f"SELECT EmployeeID, LastName, FirstName, City FROM Employees ORDER BY EmployeeID LIMIT {limit} OFFSET {offset}").fetchall()
+            if order == 'first_name':
+                data = app.db_connection.execute(f"SELECT EmployeeID, LastName, FirstName, City FROM Employees ORDER BY FirstName LIMIT {limit} OFFSET {offset}").fetchall()
+            if order == 'last_name':
+                data = app.db_connection.execute(f"SELECT EmployeeID, LastName, FirstName, City FROM Employees ORDER BY LastName LIMIT {limit} OFFSET {offset}").fetchall() 
+            if order == 'city':
+                data = app.db_connection.execute(f"SELECT EmployeeID, LastName, FirstName, City FROM Employees ORDER BY City LIMIT {limit} OFFSET {offset}").fetchall()            
+    
+    response.status_code = status.HTTP_200_OK
+    return {"employees":[
+        {'id': x[0] , 'last_name': f'{x[1]}' , 'first_name': f'{x[2]}', 'city': f'{x[3]}'} for x in data
+    ]}
 
-
-@app.post("/categories", status_code=201)
-async def category_add(category: Category):
-    # category.name = new_remove(category.name)
-    cursor = app.db_connection.execute(
-        "INSERT INTO Categories (CategoryName) VALUES (?)", (category.name,)
-    )
-    app.db_connection.commit()
-    new_id = cursor.lastrowid
+@app.get('/products_extended')
+async def func(response: Response):
+    response.status_code = status.HTTP_200_OK
     app.db_connection.row_factory = sqlite3.Row
-    category = app.db_connection.execute(
-        "SELECT CategoryId AS id, CategoryName AS name FROM categories WHERE CategoryId = ?", (new_id,)).fetchone()
-    return category
+    data = app.db_connection.execute('''SELECT Products.ProductID, Products.ProductName, Categories.CategoryName, Suppliers.CompanyName FROM Products JOIN Categories ON Products.CategoryID = Categories.CategoryID JOIN Suppliers ON Suppliers.SupplierID = Products.SupplierID''').fetchall()
+    return {"products_extended":[
+        {"id": x['ProductID'], "name": f"{x['ProductName']}", "category": f"{x['CategoryName']}", "supplier": f"{x['CompanyName']}"} for x in data
+    ]}
+
+@app.get('/products/{id_}/orders')
+async def func(response: Response, id_: int):
+    number = []
+    ids = app.db_connection.execute(f"SELECT OrderID FROM Orders").fetchall()
+    for i in range(len(ids)):
+        number.append(ids[i][0])
+    if id_ not in number:
+        raise HTTPException(status_code=404)
 
 
-@app.put("/categories/{category_id}")
-async def category_update(category: Category, category_id: int):
-    check_category_id(category_id)
-    # category.name = new_remove(category.name)
-    cursor = app.db_connection.execute(
-        "UPDATE Categories SET CategoryName = ? WHERE CategoryId = ?", (category.name, category_id)
-    )
-    app.db_connection.commit()
-    category = app.db_connection.execute(
-        "SELECT CategoryId AS id, CategoryName AS name FROM categories WHERE CategoryId = ?",
-        (category_id,)).fetchone()
-    return category
-
-
-@app.delete("/categories/{category_id}")
-async def category_delete(category_id: int):
-    check_category_id(category_id)
-    cursor = app.db_connection.execute(
-        "DELETE FROM Categories WHERE CategoryId = ?", (category_id,)
-    )
-    app.db_connection.commit()
-    return {"deleted": cursor.rowcount}
-
-
-@app.get("/customers")
-async def customers():
+    response.status_code = status.HTTP_200_OK
     app.db_connection.row_factory = sqlite3.Row
-    data = app.db_connection.execute(
-        """SELECT CustomerId AS id, CompanyName AS name,
-          Address || ' ' || PostalCode || ' ' || City || ' ' || Country AS full_address FROM customers""").fetchall()
-    return {
-        'customers': data
-    }
-
-
-@app.get("/products/{product_id}")
-async def products(product_id: int):
-    app.db_connection.row_factory = sqlite3.Row
-    data = app.db_connection.execute(
-        "SELECT ProductId AS id, ProductName AS name FROM products WHERE ProductId= ?", (product_id,)).fetchone()
-    if data:
-        return data
-    else:
-        raise HTTPException(status_code=404, detail='Incorrect id value')
-
-
-@app.get("/products/{product_id}/orders")
-async def products(product_id: int):
-    app.db_connection.row_factory = sqlite3.Row
-    data = app.db_connection.execute("""
-        SELECT o.OrderId AS id, c.CompanyName AS customer, od.Quantity AS quantity,
-        ROUND((od.UnitPrice * od.Quantity) - (od.Discount * (od.UnitPrice * od.Quantity)), 2) AS total_price
-        FROM Orders AS o JOIN Customers AS c USING (CustomerID)
-        JOIN 'Order Details' AS od USING (OrderId)
-        WHERE od.ProductId= ?""", (product_id,)).fetchall()
-
-    if data:
-        return {'orders': data}
-    else:
-        raise HTTPException(status_code=404, detail=f"Order_id {product_id} doesn't exist")
-
-
-@app.get("/employees/")
-async def employees(limit: Optional[int] = None, offset: Optional[int] = None, order='id'):
-    app.db_connection.row_factory = sqlite3.Row
-    if order not in ['id', 'first_name', 'last_name', 'city']:
-        raise HTTPException(status_code=400, detail='Wrong order parameter')
-    limitation = ' '
-    if limit or limit == 0:
-        limitation += f'LIMIT {limit}'
-        if offset or offset == 0:
-            limitation += f' OFFSET {offset}'
-    data = app.db_connection.execute(
-        f"SELECT EmployeeId AS id, LastName AS last_name, FirstName AS first_name, City AS city FROM employees ORDER BY {order}" + limitation).fetchall()
-    return {'employees': data}
-
-
-@app.get("/products_extended")
-def products_extended():
-    app.db_connection.row_factory = sqlite3.Row
-    data = app.db_connection.execute('''
-                                     SELECT products.ProductID AS id, products.ProductName AS name,
-                                     categories.CategoryName AS category, suppliers.CompanyName AS supplier
-                                     FROM products JOIN categories USING (CategoryId)
-                                     JOIN suppliers USING(SupplierId)
-                                     ''').fetchall()
-
-    return {'products_extended': data}
+    data = app.db_connection.execute('''SELECT Orders.OrderID, Customers.CompanyName, OrderDetails.Quantity, ROUND((OrderDetails.UnitPrice * OrderDetails.Quantity) - (OrderDetails.Discount * (OrderDetails.UnitPrice * OrderDetails.Quantity)), 2) AS total_price FROM Orders JOIN Customers ON Orders.CustomerID = Customers.CustomerID JOIN 'Order Details' AS OrderDetails ON Orders.OrderID = OrderDetails.OrderID WHERE OrderDetails.OrderID = ?''', (id_,)).fetchall()
+    return {"orders":[
+        {"id": x['OrderID'], "customer": f"{x['CompanyName']}", "quantity": x['Quantity'], "total_price": x['total_price']} for x in data
+    ]}
